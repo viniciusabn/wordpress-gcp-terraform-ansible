@@ -1,8 +1,8 @@
 # Cria uma VM com o Google Cloud
 resource "google_compute_instance" "helloworld" {
-  name          = "worspress"
-  machine_type  = var.machine_type
-  zone          = var.zone
+  name         = "wordpress"
+  machine_type = var.machine_type
+  zone         = var.zone
 
   # Defini a Imagem da VM
   boot_disk {
@@ -17,15 +17,38 @@ resource "google_compute_instance" "helloworld" {
     access_config {
     }
   }
-}
 
+  #Conexão SSH para validar Conectividade
+  provisioner "remote-exec" {
+    inline = ["echo 'Liberado para o Ansible'"]
 
-resource "google_sql_database_instance" "database" {
-  name             = "database1"
-  database_version = var.database_version
-  region           = var.region
-
-  settings {
-    tier = "db-f1-micro"
+    connection {
+      type        = "ssh"
+      user        = "vinicius.nascimento.clc3"
+      private_key = file("~/.ssh/id_rsa")
+      host = google_compute_instance.helloworld.network_interface.0.access_config.0.nat_ip
+      timeout     = "90s"
+    }
   }
+
+  # Cria o inventário do Ansible
+  provisioner "local-exec" {
+    command = "echo ${google_compute_instance.helloworld.network_interface.0.access_config.0.nat_ip} > ansible/inventory"
+  }
+
+  # Executa a playbook na máquina provisionada
+  provisioner "local-exec" {
+    command = "ansible-playbook -i ansible/inventory --private-key ~/.ssh/id_rsa ansible/playbook.yml"
+  }
+
 }
+
+#resource "google_sql_database_instance" "helloworld" {
+#  name             = "database2"
+#  database_version = var.database_version
+#  region           = var.region
+#
+#  settings {
+#    tier = "db-f1-micro"
+#  }
+#}
