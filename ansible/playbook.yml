@@ -2,12 +2,6 @@
   remote_user: vinicius.nascimento.clc3
   become: yes
   tasks:
-        - name: Criando o Arquivo Info
-          lineinfile:
-                path: /tmp/info
-                line: SERVIDOR DE BANCO DE DADOS MYSQL
-                create: yes
-        
         - name: Definindo a Senha de Administrador do MySQL
           debconf: name='mysql-server' question='mysql-server/root_password' value='123' vtype='password'
 
@@ -46,16 +40,6 @@
                 line: bind-address  =  0.0.0.0
           notify:
                 - restart mysql
-
-                  #- hosts: webservers
-                  #remote_user: vagrant
-                  # become: yes
-                  #tasks:
-        - name: Criando o Arquivo Info
-          lineinfile:
-                path: /tmp/info
-                line: SERVIDOR DO BLOG WORDPRESS
-                create: yes
 
         - name: Instalando pacotes apache e php
           apt:
