@@ -1,9 +1,116 @@
-# PLAY PARA CONFIGURACAO A INSTANCIA GCP
 - hosts: all
-  name: Configurando instancia GCP
   remote_user: vinicius.nascimento.clc3
   become: yes
   tasks:
-    - name: Ajustando Timezone
-      timezone:
-        name: America/Sao_Paulo
+        - name: Criando o Arquivo Info
+          lineinfile:
+                path: /tmp/info
+                line: SERVIDOR DE BANCO DE DADOS MYSQL
+                create: yes
+        
+        - name: Definindo a Senha de Administrador do MySQL
+          debconf: name='mysql-server' question='mysql-server/root_password' value='123' vtype='password'
+
+        - name: Confirmando a Senha de Administrador do MySQL
+          debconf: name='mysql-server' question='mysql-server/root_password_again' value='123' vtype='password'
+
+        - name: Instalando MySql-Server
+          apt: 
+                state: present
+                update_cache: yes
+                pkg:
+                   - mysql-server
+                   - python-pymysql
+
+        - name: Criando a Base de Dados
+          mysql_db:
+                name: wordpress
+                state: present
+                login_user: root
+                login_password: 123
+
+        - name: Criando o usuário do Banco
+          mysql_user:
+                name: wordpress
+                password: impacta
+                priv: '*.*:ALL'
+                state: present
+                host: 172.17.177.22
+                login_user: root
+                login_password: 123
+
+        - name: Liberando o MySQL para Conexões Remotas
+          lineinfile:
+                path: /etc/mysql/mysql.conf.d/mysqld.cnf
+                regexp: '^bind-address'
+                line: bind-address  =  0.0.0.0
+          notify:
+                - restart mysql
+
+                  #- hosts: webservers
+                  #remote_user: vagrant
+                  # become: yes
+                  #tasks:
+        - name: Criando o Arquivo Info
+          lineinfile:
+                path: /tmp/info
+                line: SERVIDOR DO BLOG WORDPRESS
+                create: yes
+
+        - name: Instalando pacotes apache e php
+          apt:
+                update_cache: yes
+                state: present
+                pkg:
+                        - apache2
+                        - php
+                        - libapache2-mod-php
+                        - php-cli
+                        - php-curl
+                        - php-gd
+                        - php-mbstring
+                        - php-xml
+                        - php-xmlrpc
+                        - php-soap
+                        - php-intl
+                        - php-zip
+                        - php-mysql
+
+        - name: "Dowload do wordpress"
+          get_url: url=https://wordpress.org/latest.tar.gz dest=/tmp/latest.tar.gz
+
+        - name: "Descompacta wordpress na pasta tmp"
+          unarchive: 
+                src: /tmp/latest.tar.gz 
+                dest: /var/www/
+                owner: www-data
+                group: www-data
+                copy: no
+
+        - name: Configurando o Apache
+          lineinfile:
+                dest: /etc/apache2/sites-enabled/000-default.conf
+                regexp: "(.)+DocumentRoot /var/www/html"
+                line: "DocumentRoot /var/www/wordpress"
+          notify:
+                - restart apache
+
+        - name: Configurando o Wordpress (Banco de Dados)
+          template:
+                src: wp-config.j2
+                dest: /var/www/wordpress/wp-config.php
+                owner: www-data
+                group: www-data
+                mode: '0644'
+
+  handlers:
+        - name: restart apache
+          service:
+                name: apache2
+                state: restarted
+
+        - name: restart mysql
+          service:
+                name: mysql
+                state: restarted
+

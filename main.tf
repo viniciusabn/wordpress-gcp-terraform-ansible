@@ -25,7 +25,7 @@ resource "google_compute_instance" "helloworld" {
     connection {
       type        = "ssh"
       user        = "vinicius.nascimento.clc3"
-      private_key = file("~/.ssh/id_rsa")
+      private_key = file("../id_rsa")
       host = google_compute_instance.helloworld.network_interface.0.access_config.0.nat_ip
       timeout     = "90s"
     }
@@ -37,9 +37,9 @@ resource "google_compute_instance" "helloworld" {
   }
 
   # Executa a playbook na máquina provisionada
-  provisioner "local-exec" {
-    command = "ansible-playbook -i ansible/inventory --private-key ~/.ssh/id_rsa ansible/playbook.yml"
-  }
+  #provisioner "local-exec" {
+  #  command = "ansible-playbook -i ansible/inventory --private-key ../id_rsa ansible/playbook.yml"
+  #}
 
 }
 
