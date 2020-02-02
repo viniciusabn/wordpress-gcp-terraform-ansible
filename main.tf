@@ -33,7 +33,7 @@ resource "google_compute_instance" "helloworld" {
 
   # Cria o inventário do Ansible
   provisioner "local-exec" {
-    command = "echo ${google_compute_instance.helloworld.network_interface.0.access_config.0.nat_ip} > ../inventory"
+    command = "echo ${google_compute_instance.helloworld.network_interface.0.access_config.0.nat_ip} > ../../inventory"
   }
 
 }
